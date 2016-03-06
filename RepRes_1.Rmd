@@ -1,0 +1,96 @@
+---
+title: "RepRes_Assign1"
+author: "EduardoAbreu"
+date: "March 6, 2016"
+output: html_document
+---
+===============================================================
+#Loading and preprocessing the data
+
+###Loading, and installing if needed, packages that will be used
+```{r, echo=TRUE}
+if(!require(dplyr)) {
+  install.packages("dplyr")
+  library(dplyr)  
+}
+
+if(!require(ggplot2)) {
+  install.packages("ggplot2")
+  library(ggplot2)  
+}
+
+if(!require(reshape2)) {
+  install.packages("reshape2")
+  library(reshape2)  
+}
+```
+
+###Downloading the data and reading it into R
+
+```{r, echo=TRUE}
+fileURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(fileURL, "activity_data.zip")
+unzip("activity_data.zip")
+
+data <- read.csv("activity.csv", na.strings = "NA")
+```
+
+###Setting the correct date format so that data manipulation can happen
+
+```{r, echo=TRUE}
+data$date <- as.Date(data$date)
+```
+
+#What is mean total number of steps taken per day?
+##For this part of the assignment, you can ignore the missing values in the dataset.
+
+###Using only complete cases
+
+```{r, echo=TRUE}
+complete_data <- data[complete.cases(data),]
+```
+
+###Change the data format into table-dataframe required by dplyr to function best. Once in the right format, can then use "group_by"" and "summarize" from dplyr to aggregate the date by day and then sum the total steps per day.
+
+```{r,echo=TRUE}
+mani_data <- tbl_df(complete_data)
+day_step <- group_by(mani_data, date)
+day_step_tot <- summarize(day_step, DayStep = sum(steps))
+
+hist(day_step_tot$DayStep, col = "red", main = "Total Steps per Day (histogram)",
+     xlab = "Total Steps per Day")
+```
+
+###As we were also asked to provide the mean and median for total steps taken:
+
+```{r, echo=TRUE}
+print(c("Average Total Steps per Day", mean(day_step_tot$DayStep, na.rm = TRUE)))
+
+print(c("Median Total Steps per Day", median(day_step_tot$DayStep, na.rm = TRUE)))
+```
+=========================================================
+#What is the average daily activity pattern?
+
+###Similar to above, will be using dplyr's "group_by" and "summarize" to manipulate the data but instead of grouping on days, we are grouping on interval, and instead of generating a sum total, we are calculating an average (aka the mean).
+
+```{r, echo=TRUE}
+daily_pattern <- group_by(mani_data, interval)
+daily_pattern_avg <- summarize(daily_pattern, IntervalAvg = mean(steps))
+```
+
+###As per the assignment, now we generate a plot of type = "l" in order to visualize the most active intervals during a day.
+```{r, echo=TRUE}
+plot(x = daily_pattern_avg$interval, y = daily_pattern_avg$IntervalAvg, type = "l", col = "purple", xlab = "5-minute intervals of a day", ylab = "Average Number of Steps per Interval", main = "5-minute Intervals vs Average Steps per Interval")
+```
+
+###As we were also asked to identify "Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?"
+
+```{r, echo=TRUE}
+max_avg_interval_value <- max(daily_pattern_avg$IntervalAvg, na.rm = TRUE)
+max_interval <- daily_pattern_avg$interval[daily_pattern_avg$IntervalAvg == max_avg_interval_value]
+
+print(c("The interval that on average, across all days, has the highest number of steps is interval", max_interval))
+```
+
+
+
